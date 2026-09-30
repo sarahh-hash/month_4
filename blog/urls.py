@@ -24,4 +24,5 @@ urlpatterns = [
     path("name", name),
     path("now", time),
     path("student/", student),
+    path("name", name),
 ]

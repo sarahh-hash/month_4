@@ -12,8 +12,17 @@ def hello(r):
 
 
 def name(r):
-    name = "Sara"
-    return HttpResponse(f"Hello <h1>{name}</h1>")
+    post = Post.objects.filter(id=2).first()
+
+    if post is None:
+        return HttpResponse("Пост с id=2 не найден")
+
+    return HttpResponse(
+        f"Название: {post.title}\n"
+        f"Описание: {post.description}\n"
+        f"Активен: {post.is_active}",
+        content_type="text/plain; charset=utf-8",
+    )
 
 
 def time(r):
@@ -21,7 +30,6 @@ def time(r):
 
     return HttpResponse(f"NOW: {dt.strftime('%d-%m-%Y %H:%M:%S')}")
 
-from django.http import HttpResponse
-
 def student(request):
     return HttpResponse("Я студент")
+
