@@ -17,12 +17,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from posts.views import hello, name, time, student
-
+from posts.views import post_detail, post_list, active_post_list
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("path", hello),
     path("name", name),
     path("now", time),
     path("student/", student),
+    path("student/", student),
     path("name", name),
-]
+    path("", post_list, name="post_list"),
+    path("post/<int:pk>", post_detail, name="post_detail"),
+    path("posts/active/", active_post_list, name="active_post_list"),
+    ]
