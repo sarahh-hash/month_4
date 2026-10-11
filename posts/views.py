@@ -6,6 +6,7 @@ from django.shortcuts import render
 from django.shortcuts import redirect, render
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
+from posts.forms import CategoryForm, PostForm
 from posts.models import Post
 
 # Create your views here.
@@ -30,14 +31,12 @@ def name(r):
 
 # Create your views here.
 def post_list(request: HttpRequest):
-    posts = Post.objects.all()  # SELECT * FROM posts;
-    print(request.path)
-    posts = Post.objects.all()
+    posts = Post.objects.order_by("-created_at", "-id")
+
     if search := request.GET.get("search"):
         posts = posts.filter(description__icontains=search)
-    return render(request, "posts/list.html", context={"posts": posts})
 
-
+    return render(request, "posts/list.html", {"posts": posts})
 def time(r):
     dt = datetime.now()
 
@@ -50,28 +49,41 @@ def post_detail(r, pk):
     post = Post.objects.get(id=pk)  # SELECT * FROM posts WHERE id = ?;
     print(r.path)
     return render(r, "posts/detail.html", context={"post": post})
-def active_post_list(request: HttpRequest):
-    posts = Post.objects.filter(is_active=True)
-    print(request.path)
 
-    return render(
-        request,
-        "posts/active_list.html",
-        context={"posts": posts}
-    )
+def active_post_list(request: HttpRequest):
+    posts = Post.objects.filter(is_active=True).order_by("-created_at", "-id")
+
+    return render(request, "posts/active_list.html", {"posts": posts})
 
 
 def create_post(request: HttpRequest):
+    if request.method == "POST":
+        form = PostForm(request.POST, request.FILES)
 
-    if request.method.lower() == "post":
-        title = request.POST.get("title")
-        description = request.POST.get("description")
-        image = request.FILES.get("image")
-        post = Post.objects.create(title=title, description=description, image=image)
+        if form.is_valid():
+            post = form.save()
+            return redirect("post_detail", post.pk)
+    else:
+        form = PostForm()
 
-        return redirect("post_detail", post.pk)
+    return render(request, "posts/create.html", {"form": form})
 
-    return render(request, "posts/create.html")
+
+def create_category(request: HttpRequest):
+    if request.method == "POST":
+        form = CategoryForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect("create_post")
+    else:
+        form = CategoryForm()
+
+    return render(
+        request,
+        "posts/create_category.html",
+        {"form": form},
+    )
 @require_POST
 def toggle_post_active(request: HttpRequest, pk):
     post = get_object_or_404(Post, id=pk)

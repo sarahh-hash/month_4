@@ -21,6 +21,11 @@ urlpatterns = [
         views.toggle_post_active,
         name="toggle_post_active",
     ),
+    path(
+    "category/create/",
+    views.create_category,
+    name="create_category",
+),
 ]
 
 if settings.DEBUG:
