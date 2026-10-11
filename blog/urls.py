@@ -1,32 +1,34 @@
-"""
-URL configuration for blog project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
-from posts.views import hello, name, time, student
-from posts.views import post_detail, post_list, active_post_list
+from posts import views
+
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("path", hello),
-    path("name", name),
-    path("now", time),
-    path("student/", student),
-    path("student/", student),
-    path("name", name),
-    path("", post_list, name="post_list"),
-    path("post/<int:pk>", post_detail, name="post_detail"),
-    path("posts/active/", active_post_list, name="active_post_list"),
-    ]
+    path("path", views.hello),
+    path("name", views.name),
+    path("now", views.time),
+    path("student/", views.student),
+
+    path("", views.post_list, name="post_list"),
+    path("post/create/", views.create_post, name="create_post"),
+    path("post/<int:pk>", views.post_detail, name="post_detail"),
+    path("posts/active/", views.active_post_list, name="active_post_list"),
+
+    path(
+        "post/<int:pk>/toggle-active/",
+        views.toggle_post_active,
+        name="toggle_post_active",
+    ),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(
+        settings.STATIC_URL,
+        document_root=settings.STATIC_ROOT,
+    )
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT,
+    )

@@ -3,7 +3,9 @@ from datetime import datetime
 from django.http.response import HttpResponse
 from django.http.request import HttpRequest
 from django.shortcuts import render
-
+from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_POST
 from posts.models import Post
 
 # Create your views here.
@@ -30,6 +32,9 @@ def name(r):
 def post_list(request: HttpRequest):
     posts = Post.objects.all()  # SELECT * FROM posts;
     print(request.path)
+    posts = Post.objects.all()
+    if search := request.GET.get("search"):
+        posts = posts.filter(description__icontains=search)
     return render(request, "posts/list.html", context={"posts": posts})
 
 
@@ -55,3 +60,22 @@ def active_post_list(request: HttpRequest):
         context={"posts": posts}
     )
 
+
+def create_post(request: HttpRequest):
+
+    if request.method.lower() == "post":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        image = request.FILES.get("image")
+        post = Post.objects.create(title=title, description=description, image=image)
+
+        return redirect("post_detail", post.pk)
+
+    return render(request, "posts/create.html")
+@require_POST
+def toggle_post_active(request: HttpRequest, pk):
+    post = get_object_or_404(Post, id=pk)
+    post.is_active = not post.is_active
+    post.save(update_fields=["is_active"])
+
+    return redirect("post_detail", post.pk)
