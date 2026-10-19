@@ -1,22 +1,19 @@
 from datetime import datetime
 
-from django.http.response import HttpResponse
-from django.http.request import HttpRequest
-from django.shortcuts import render
-from django.shortcuts import redirect, render
-from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+
 from posts.forms import CategoryForm, PostForm
 from posts.models import Post
 
-# Create your views here.
-posts = Post.objects.filter(is_active=True)
 
-def hello(r):
+def hello(request):
     return HttpResponse("Hello <h1>world!</h1>")
 
 
-def name(r):
+def name(request):
     post = Post.objects.filter(id=2).first()
 
     if post is None:
@@ -29,7 +26,16 @@ def name(r):
         content_type="text/plain; charset=utf-8",
     )
 
-# Create your views here.
+
+def time(request):
+    dt = datetime.now()
+    return HttpResponse(f"NOW: {dt.strftime('%d-%m-%Y %H:%M:%S')}")
+
+
+def student(request):
+    return HttpResponse("Я студент")
+
+
 def post_list(request: HttpRequest):
     posts = Post.objects.order_by("-created_at", "-id")
 
@@ -37,36 +43,72 @@ def post_list(request: HttpRequest):
         posts = posts.filter(description__icontains=search)
 
     return render(request, "posts/list.html", {"posts": posts})
-def time(r):
-    dt = datetime.now()
 
-    return HttpResponse(f"NOW: {dt.strftime('%d-%m-%Y %H:%M:%S')}")
 
-def student(request):
-    return HttpResponse("Я студент")
+def post_detail(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    return render(request, "posts/detail.html", {"post": post})
 
-def post_detail(r, pk):
-    post = Post.objects.get(id=pk)  # SELECT * FROM posts WHERE id = ?;
-    print(r.path)
-    return render(r, "posts/detail.html", context={"post": post})
 
 def active_post_list(request: HttpRequest):
-    posts = Post.objects.filter(is_active=True).order_by("-created_at", "-id")
+    posts = Post.objects.filter(
+        is_active=True
+    ).order_by("-created_at", "-id")
 
     return render(request, "posts/active_list.html", {"posts": posts})
 
 
+@login_required
+def my_posts(request: HttpRequest):
+    posts = Post.objects.filter(
+        author=request.user
+    ).order_by("-created_at", "-id")
+
+    # Используем уже существующий шаблон списка
+    return render(request, "posts/list.html", {"posts": posts})
+
+
+@login_required
 def create_post(request: HttpRequest):
     if request.method == "POST":
         form = PostForm(request.POST, request.FILES)
 
         if form.is_valid():
-            post = form.save()
+            post = form.save(commit=False)
+            post.author = request.user
+            post.save()
             return redirect("post_detail", post.pk)
     else:
         form = PostForm()
 
     return render(request, "posts/create.html", {"form": form})
+
+
+@login_required
+def edit_post(request: HttpRequest, pk):
+    post = get_object_or_404(Post, pk=pk, author=request.user)
+
+    if request.method == "POST":
+        form = PostForm(request.POST, request.FILES, instance=post)
+
+        if form.is_valid():
+            form.save()
+            return redirect("post_detail", post.pk)
+    else:
+        form = PostForm(instance=post)
+
+    return render(request, "posts/create.html", {"form": form})
+
+
+@login_required
+def delete_post(request: HttpRequest, pk):
+    post = get_object_or_404(Post, pk=pk, author=request.user)
+
+    if request.method == "POST":
+        post.delete()
+        return redirect("my_posts")
+
+    return render(request, "posts/delete.html", {"post": post})
 
 
 def create_category(request: HttpRequest):
@@ -84,9 +126,11 @@ def create_category(request: HttpRequest):
         "posts/create_category.html",
         {"form": form},
     )
+
+
 @require_POST
 def toggle_post_active(request: HttpRequest, pk):
-    post = get_object_or_404(Post, id=pk)
+    post = get_object_or_404(Post, pk=pk)
     post.is_active = not post.is_active
     post.save(update_fields=["is_active"])
 
