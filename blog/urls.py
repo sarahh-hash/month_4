@@ -1,41 +1,74 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.auth import views as auth_views
 from django.urls import path
-from posts import views
-from posts.views import create_post, delete_post, edit_post, post_detail, post_list, my_posts
+from django.contrib.auth import views as auth_views
 from user.views import register
+from posts import views
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("login", auth_views.LoginView.as_view(), name="login"),
-    path("logout", auth_views.LogoutView.as_view(), name="logout"),
-    path("register", register, name="register"),
-    path("path", views.hello),
-    path("name", views.name),
-    path("now", views.time),
-    path("student/", views.student),
 
-    path("", views.post_list, name="post_list"),
-    path("post/create/", views.create_post, name="create_post"),
-    path("posts/my/", my_posts, name="my_posts"),
-    path("post/<int:pk>/edit", edit_post, name="edit_post"),
-    path("post/<int:pk>/delete", delete_post, name="delete_post"),
-    path("post/<int:pk>", views.post_detail, name="post_detail"),
-    path("posts/active/", views.active_post_list, name="active_post_list"),
+    path("", views.PostListView.as_view(), name="post_list"),
+    path("hello/", views.HelloView.as_view(), name="hello"),
+    path("name/", views.NameView.as_view(), name="name"),
+    path("time/", views.TimeView.as_view(), name="time"),
+    path("student/", views.StudentView.as_view(), name="student"),
 
     path(
-        "post/<int:pk>/toggle-active/",
-        views.toggle_post_active,
+        "post/<int:pk>/",
+        views.PostDetailView.as_view(),
+        name="post_detail",
+    ),
+    path(
+        "posts/active/",
+        views.ActivePostListView.as_view(),
+        name="active_post_list",
+    ),
+    path(
+        "posts/my/",
+        views.MyPostsView.as_view(),
+        name="my_posts",
+    ),
+    path(
+        "post/create/",
+        views.PostCreateView.as_view(),
+        name="create_post",
+    ),
+    path(
+        "post/<int:pk>/edit/",
+        views.UpdatePostView.as_view(),
+        name="edit_post",
+    ),
+    path(
+        "post/<int:pk>/delete/",
+        views.PostDeleteView.as_view(),
+        name="delete_post",
+    ),
+    path(
+        "category/create/",
+        views.CategoryCreateView.as_view(),
+        name="create_category",
+    ),
+    path(
+        "post/<int:pk>/toggle/",
+        views.TogglePostActiveView.as_view(),
         name="toggle_post_active",
     ),
     path(
-    "category/create/",
-    views.create_category,
-    name="create_category",
-),
+        "login/",
+        auth_views.LoginView.as_view(
+            template_name="registration/login.html"
+        ),
+        name="login",
+    ),
+    path(
+        "logout/",
+        auth_views.LogoutView.as_view(),
+        name="logout",
+    ),
+    path("register/", register, name="register"),
 ]
 
 if settings.DEBUG:
